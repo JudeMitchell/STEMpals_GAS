@@ -1,0 +1,15 @@
+{
+  "timeZone": "Australia/Melbourne",
+  "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "FileManagement",
+        "version": "0",
+        "libraryId": "1tP5H3Ee4gSEFkes4zDMV33csczNjg3qrBHjAXHI1RnUiUwEmQQRb_LaI",
+        "developmentMode": true
+      }
+    ]
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8"
+}

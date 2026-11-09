@@ -1,0 +1,22 @@
+{
+  "timeZone": "Australia/Melbourne",
+  "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "STEMpalsHelperFunctions",
+        "version": "0",
+        "libraryId": "11ZaJdA-iaze-7nvPcXI0z569w2hWqYxEJZ4GHlPoqZppmivdCir-lK0w",
+        "developmentMode": true
+      }
+    ],
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Drive",
+        "version": "v3",
+        "serviceId": "drive"
+      }
+    ]
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8"
+}
