@@ -8,12 +8,15 @@ function createSchoolFolders(ui) {
   const yearFolder = HelperFunctions.getYearFolder();
   const year = yearFolder.getName().slice(0,4);
   const yearSchoolsFolder = HelperFunctions.getYearFolder(null, 'Schools');
-
+  
+  runSheetSS.toast('Checking for input files...');
   HelperFunctions.checkForInputFiles('STEMpalsYY_<SchoolName>', 'WelcomePack', year, ui);
+  runSheetSS.toast('All input files found');
 
-  var studentListDue = HelperFunctions.getKeyDate('Student List Due', '<EEEE> <d> <mmmm>');
+  var studentListDue = HelperFunctions.getKeyDate('Student List Due', '<d><ord> <mmm> <YYYY>');
 
   var failedSchools = [];
+  var completedSchools = [];
   var emailDetails = {};
   var teachersSheetClmnLtrs = HelperFunctions.findAllColumns('letter', teachersSheet, 'School');
 
@@ -52,8 +55,8 @@ function createSchoolFolders(ui) {
       }
       var iSchoolFolder = yearSchoolsFolder.createFolder(iSchoolFolderName);
 
-      HelperFunctions.updateFolder('STEMpalsYY_<SchoolName>', iSchoolFolder, year, 'RunSheet');
-
+      HelperFunctions.updateFolder('STEMpalsYY_<SchoolName>', iSchoolFolder, year, 'WelcomePack');
+      // return;
       HelperFunctions.setRichTextCell(iSchoolFolder.getId(), teachersSheet.getRange(teachersSheetClmnLtrs['Folder'] + iRow), 'folder', iSchoolFolderName);
       
       if ( ! iMicrosoft ){
@@ -70,7 +73,7 @@ function createSchoolFolders(ui) {
         var microsoftSentCF = SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(false).setBackground('DarkOrange').setRanges([teachersSheet.getRange(teachersSheetClmnLtrs['Welcome pack email'] + iRow)]).build();
         teachersSheetCFRules.push(microsoftSentCF);
       }
-
+      completedSchools.push(iSchool);
     } catch ( schoolError ){
       Logger.log('ERROR: ' + iSchool);
       Logger.log(schoolError.stack)
@@ -84,4 +87,6 @@ function createSchoolFolders(ui) {
   if ( failedSchools.length > 0 ){
     ui.alert('Some schools failed!', '- ' + failedSchools.join('\n- '), ui.ButtonSet.OK);
   }
+
+  ui.alert('School folders created:', '- ' + completedSchools.join('\n- '), ui.ButtonSet.OK);
 }
