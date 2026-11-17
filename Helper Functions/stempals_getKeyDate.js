@@ -11,8 +11,8 @@ function getRunSheet(year){
 }
 
 function getKeyDate(dateID, format) {
-  var dateID = 'Student List Due';
-  var format = '<EEEE> <d> <mmmm>';
+  // var dateID = 'Student List Due';
+  // var format = '<d><ord> <mmm> <YYYY>';
   
   const runSheetSS = getRunSheet();
   const keyDatesSheet = runSheetSS.getSheetByName('Key Dates');
@@ -32,13 +32,32 @@ function getKeyDate(dateID, format) {
       var config = {
                     'EEEE': keyDate.toLocaleString(undefined, {'weekday': 'long'}),
                     'd': keyDate.toLocaleString(undefined, {'day': 'numeric'}),
-                    'mmmm': keyDate.toLocaleString(undefined, {'month': 'long'})
+                    'mmm': keyDate.toLocaleString(undefined, {'month': 'short'}),
+                    'mmmm': keyDate.toLocaleString(undefined, {'month': 'long'}),
+                    'YYYY': keyDate.toLocaleString(undefined, {'year': 'numeric'}),
+                    'ord': getOrdinal(keyDate.toLocaleString(undefined, {'day': 'numeric'}))
                     };
       for ( c of Object.keys(config) ){
         format = format.replace('<' + c + '>', config[c]);
       }
-      
+      // Logger.log(format);
       return format;
     }
+  }
+}
+
+function getOrdinal(dayNbr){
+  var stNumbers = [1, 21, 31];
+  var ndNumbers = [2, 22];
+  var rdNumbers = [3, 23];
+
+  if ( stNumbers.includes(dayNbr) ){
+    return 'st';
+  } else if ( ndNumbers.includes(dayNbr) ){
+    return 'nd';
+  } else if ( rdNumbers.includes(dayNbr) ){
+    return 'rd';
+  } else {
+    return 'th';
   }
 }
