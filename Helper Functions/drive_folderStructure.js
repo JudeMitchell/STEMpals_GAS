@@ -5,18 +5,11 @@ function getFolderStructure(folderRef) {
   var folderstructureClmnNbrs = findAllColumns('number', folderStructureSheet, 'YYYY STEMpals Program', false);
   var nRows = getListFromRange(folderStructureSheet.getRange(2, folderstructureClmnNbrs[folderRef], folderStructureSheet.getMaxRows() - 1, 1), 'column').length;
   
-  // Logger.log(folderstructureClmnNbrs[folderRef])
   var detailClmnFormulas = folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 2).getFormulas();
   folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 2).setValues([['Type', 'Create at']]);
-  // var columnNames = [ 'Type (' + folderRef + ')',
-  //                     'Create at (' + folderRef + ')'
-  //                   ];
+
   var folderDataRange = folderStructureSheet.getRange(2, folderstructureClmnNbrs[folderRef], folderStructureSheet.getMaxRows(), 3);
-  // Logger.log(folderDataRange.getA1Notation())
-  // var structure = getDictofListsFromRows(folderDataRange, )
-  // var structure = getDictListsFromTable(firstRow, ['Object Name', 'Type', 'Create at'], nRows, folderStructureSheet)
   var structure = getDictDictsFromTable(1, folderRef, ['Type', 'Create at'], nRows, folderStructureSheet);
-  // Logger.log(structure)
 
   folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 2).setFormulas(detailClmnFormulas);
   return structure;
@@ -27,7 +20,6 @@ function updateSubFolder(subFolder, folderRef, yearFolder){
   var folderRef = 'STEMpalsYY_<SchoolName>';
   var schoolFolder = DriveApp.getFolderById('1Tdi82prS6o5MZ3zZYLfEOOyoYbAs-7Ir')
 
-
   updateFolder(folderRef, schoolFolder, '2027', 'WelcomePack');
 
 }
@@ -35,7 +27,9 @@ function updateSubFolder(subFolder, folderRef, yearFolder){
 function getFileTreatment(){
   var fileTreatment = { 'PDF': 'blobCopy',
                         'docx': 'blobCopy',
-                        'Google Sheet': 'driveCopy'};
+                        'Google Sheet': 'driveCopy',
+                        'Google Doc': 'driveCopy',
+                        };
   return fileTreatment;
 }
 
@@ -88,10 +82,7 @@ function updateFolder(folderRef, folder, year, timePoint){
             var fileToCopy = yearResourcesFolder.getFilesByName(formattedFileName).next();
             fileToCopy.makeCopy(formattedFileName, folder);
           } else if ( fileTreatment[fsFileType] == 'driveCopy' ) {
-            const fsTemplate = getTemplateFile(fs, 'file');
-            fsTemplate.makeCopy(formattedFileName, folder);
-
-
+            copyTemplate(fs, formattedFileName, folder, {year: year});
           }
         }
       }
@@ -141,10 +132,17 @@ function getTemplateFile(fileName, returnObject){
 }
 
 function checkForInputFiles(folderRef, timePoint, year, ui){
+  const fileManagerSS = SpreadsheetApp.openById('1zO0JTbchfqLHyYTG6PYleFsGzSrOByOphvwqThV3Fwg');
+  const folderStructureSheet = fileManagerSS.getSheetByName('Folder structure');
+  var folderstructureClmnLtrs = findAllColumns('letter', folderStructureSheet, 'YYYY STEMpals Program', false);
+  folderStructureSheet.getRange(folderstructureClmnLtrs[folderRef] + '2:' + folderstructureClmnLtrs[folderRef]).setBackground(null);
+
   var folderStructure = getFolderStructure(folderRef);
   var yearResourcesFolder = getYearFolder(null, 'Teacher Resources');
+  var templatesFolder = DriveApp.getFolderById('1BM8nkqUcVBXruj8w5HRsZi7ie0LDXvSF');
 
   var missingFiles = [];
+  var missingTemplates = [];
   for ( fs of Object.keys(folderStructure) ){
     if ( folderStructure[fs]['Type'] == 'Folder' ){
       continue;
@@ -156,15 +154,26 @@ function checkForInputFiles(folderRef, timePoint, year, ui){
           var fileToCopy = yearResourcesFolder.getFilesByName(formattedFileName);
           if ( ! fileToCopy.hasNext() ){
             missingFiles.push(formattedFileName);
+            folderStructureSheet.getRange(folderstructureClmnLtrs[folderRef] + '2:' + folderstructureClmnLtrs[folderRef]).createTextFinder(fs).findAll()[0].setBackground('Crimson');
           }
         } else {
           var formattedFileName = fs.replace('YYYY', year).replace('YY', year.slice(2,4));
+          var fileToCopy = templatesFolder.getFilesByName(formattedFileName);
+          if ( ! fileToCopy.hasNext() ){
+            missingTemplates.push(formattedFileName);
+            folderStructureSheet.getRange(folderstructureClmnLtrs[folderRef] + '2:' + folderstructureClmnLtrs[folderRef]).createTextFinder(fs).findAll()[0].setBackground('DarkOrange');
+          }
         }
       }
     }
   }
 
-  if ( missingFiles.length > 0 ){
+  if ( missingFiles.length > 0 & missingTemplates.length > 0 ){
+    var missingFilesString = '- ' + missingFiles.join(' (Teacher Resources)\n- ') + ' (Teacher Resources)';
+    var missingTemplates = '- ' + missingTemplates.join(' (Templates)\n- ') + ' (Templates)';
+    ui.alert('Required Files missing', missingFilesString + missingTemplatessString, ui.ButtonSet.OK);
+    throw new Error ('Files missing from Teacher Resources folder: ' + missingFiles.join(', '));
+  } else if ( missingFiles.length > 0 ){
     ui.alert('Files missing from Teacher Resources folder!', '- ' + missingFiles.join('\n- '), ui.ButtonSet.OK);
     throw new Error ('Files missing from Teacher Resources folder: ' + missingFiles.join(', '));
   }
