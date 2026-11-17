@@ -17,7 +17,7 @@ function createSchoolFolders(ui) {
 
   var failedSchools = [];
   var completedSchools = [];
-  var emailDetails = {};
+  var skippedSchools = [];
   var teachersSheetClmnLtrs = HelperFunctions.findAllColumns('letter', teachersSheet, 'School');
 
   var emailVariables = {'year': year, 'studentListDueDate': studentListDue};
@@ -30,6 +30,8 @@ function createSchoolFolders(ui) {
 
   var nSchools = HelperFunctions.getListFromRange(teachersSheet.getRange('A4:A'), 'column').length;
   for ( iRow = 4; iRow <= teachersSheet.getMaxRows(); iRow++ ){
+    var emailDetails = {};
+
     try {
       var iSchool = teachersSheet.getRange(teachersSheetClmnLtrs['School'] + iRow).getValue();
       if ( iSchool == '' ){
@@ -39,8 +41,10 @@ function createSchoolFolders(ui) {
       var iFolder = teachersSheet.getRange(teachersSheetClmnLtrs['Folder'] + iRow).getValue();
       if ( iFolder == '' | iFolder == '---' ){
         runSheetSS.toast(iSchool, 'School ' + Number(iRow - 3) + '/' + nSchools);
+        Logger.log(' = Running for ' + iSchool);
       } else {
         Logger.log (' - Skipping school with existing folder: ' + iSchool + '...');
+        skippedSchools.push(iSchool);
         continue;
       } 
       
@@ -53,10 +57,10 @@ function createSchoolFolders(ui) {
       if ( iMicrosoft ){
         iSchoolFolderName = iSchoolFolderName + ' - Microsoft';
       }
+
       var iSchoolFolder = yearSchoolsFolder.createFolder(iSchoolFolderName);
 
       HelperFunctions.updateFolder('STEMpalsYY_<SchoolName>', iSchoolFolder, year, 'WelcomePack');
-      // return;
       HelperFunctions.setRichTextCell(iSchoolFolder.getId(), teachersSheet.getRange(teachersSheetClmnLtrs['Folder'] + iRow), 'folder', iSchoolFolderName);
       
       if ( ! iMicrosoft ){
@@ -66,6 +70,7 @@ function createSchoolFolders(ui) {
                                 'teacherName': iTeacher, 
                                 'folderLink': iSchoolFolder.getUrl(),
                                 'schoolName': iSchool};
+
         HelperFunctions.sendTeacherEmails('welcomePack', emailDetails, emailVariables);
         teachersSheet.getRange(teachersSheetClmnLtrs['School'] + iRow).setBackground(null);
         teachersSheet.getRange(teachersSheetClmnLtrs['Welcome pack email'] + iRow).setValue(true);
@@ -87,6 +92,9 @@ function createSchoolFolders(ui) {
   if ( failedSchools.length > 0 ){
     ui.alert('Some schools failed!', '- ' + failedSchools.join('\n- '), ui.ButtonSet.OK);
   }
-
-  ui.alert('School folders created:', '- ' + completedSchools.join('\n- '), ui.ButtonSet.OK);
+  if ( completedSchools.length == 0 ){
+    ui.alert('No folders created!', skippedSchools.length + " schools were skipped because of existing folders", ui.ButtonSet.OK);
+  } else {
+    ui.alert('School folders created:', '- ' + completedSchools.join('\n- '), ui.ButtonSet.OK);
+  }
 }
