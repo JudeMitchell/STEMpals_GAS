@@ -60,7 +60,7 @@ function createSchoolFolders(ui) {
 
       var iSchoolFolder = yearSchoolsFolder.createFolder(iSchoolFolderName);
 
-      HelperFunctions.updateFolder('STEMpalsYY_<SchoolName>', iSchoolFolder, year, 'WelcomePack');
+      HelperFunctions.updateFolder('STEMpalsYY_<SchoolName>', iSchoolFolder, year, 'WelcomePack', iMicrosoft);
       HelperFunctions.setRichTextCell(iSchoolFolder.getId(), teachersSheet.getRange(teachersSheetClmnLtrs['Folder'] + iRow), 'folder', iSchoolFolderName);
       
       if ( ! iMicrosoft ){

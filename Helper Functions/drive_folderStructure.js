@@ -6,10 +6,8 @@ function getFolderStructure(folderRef) {
   var nRows = getListFromRange(folderStructureSheet.getRange(2, folderstructureClmnNbrs[folderRef], folderStructureSheet.getMaxRows() - 1, 1), 'column').length;
   
   var detailClmnFormulas = folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 2).getFormulas();
-  folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 2).setValues([['Type', 'Create at']]);
-
-  var folderDataRange = folderStructureSheet.getRange(2, folderstructureClmnNbrs[folderRef], folderStructureSheet.getMaxRows(), 3);
-  var structure = getDictDictsFromTable(1, folderRef, ['Type', 'Create at'], nRows, folderStructureSheet);
+  folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 3).setValues([['MS', 'Type', 'Create at']]);
+  var structure = getDictDictsFromTable(1, folderRef, ['Type', 'Create at', 'MS'], nRows, folderStructureSheet);
 
   folderStructureSheet.getRange(1, folderstructureClmnNbrs[folderRef] + 1, 1, 2).setFormulas(detailClmnFormulas);
   return structure;
@@ -33,7 +31,7 @@ function getFileTreatment(){
   return fileTreatment;
 }
 
-function updateFolder(folderRef, folder, year, timePoint){
+function updateFolder(folderRef, folder, year, timePoint, isMicrosoftSchool){
   var yearResourcesFolder = getYearFolder(year, 'Teacher Resources');
 
   if ( folderRef == 'STEMpalsYY_<SchoolName>' ){
@@ -44,6 +42,9 @@ function updateFolder(folderRef, folder, year, timePoint){
 
   var folderStructure = getFolderStructure(folderRef);
   var fileTreatment = getFileTreatment();
+
+  Logger.log(folderStructure)
+  Logger.log(fileTreatment)
 
   var folderFolderItr = folder.getFolders();
   var folderFolderNames = [];
@@ -61,28 +62,36 @@ function updateFolder(folderRef, folder, year, timePoint){
 
   for ( fs of Object.keys(folderStructure) ){
     if ( folderStructure[fs]['Create at'] == timePoint ){
+
       var formattedFolderName = fs.replace('YYYY', year).replace('YY', year.slice(2,4));
       if ( folderStructure[fs]['Type'] == 'Folder' ){
         if ( folderFolderNames.includes(formattedFolderName) ){
           Logger.log('  folder already exists: ' + formattedFolderName);
         } else {
-          folder.createFolder(formattedFolderName);
+          if ( folderStructure[fs]['MS'] | ! isMicrosoftSchool ){
+            folder.createFolder(formattedFolderName);
+          }
         }
       } else {
         var fsFileType = folderStructure[fs]['Type'];
-        if ( ! /Google/.test(fsFileType) ){
-          var formattedFileName = fs.replace('YYYY', year).replace('YY', year.slice(2,4)).replace('<SchoolName>', schoolName) + '.' + fsFileType.toLowerCase();
-        } else {
-          var formattedFileName = fs.replace('YYYY', year).replace('YY', year.slice(2,4)).replace('<SchoolName>', schoolName);
-        }
-        if ( folderFileNames.includes(formattedFileName) ){
-          Logger.log('  file already exists: ' + formattedFileName);
-        } else {          
-          if ( fileTreatment[fsFileType] == 'blobCopy' ){
-            var fileToCopy = yearResourcesFolder.getFilesByName(formattedFileName).next();
-            fileToCopy.makeCopy(formattedFileName, folder);
-          } else if ( fileTreatment[fsFileType] == 'driveCopy' ) {
-            copyTemplate(fs, formattedFileName, folder, {year: year});
+        if ( folderStructure[fs]['MS'] | ! isMicrosoftSchool ){
+
+          if ( ! /Google/.test(fsFileType) ){
+            var formattedFileName = fs.replace('YYYY', year).replace('YY', year.slice(2,4)).replace('<SchoolName>', schoolName) + '.' + fsFileType.toLowerCase();
+          } else {
+            var formattedFileName = fs.replace('YYYY', year).replace('YY', year.slice(2,4)).replace('<SchoolName>', schoolName);
+          }
+          if ( folderFileNames.includes(formattedFileName) ){
+            Logger.log('  file already exists: ' + formattedFileName);
+          } else {          
+            if ( fileTreatment[fsFileType] == 'blobCopy' ){
+              var fileToCopy = yearResourcesFolder.getFilesByName(formattedFileName).next();
+              fileToCopy.makeCopy(formattedFileName, folder);
+            } else if ( fileTreatment[fsFileType] == 'driveCopy' ) {
+              copyTemplate(fs, formattedFileName, folder, {year: year});
+              // const fsTemplate = getTemplateFile(fs, 'file');
+              // fsTemplate.makeCopy(formattedFileName, folder);
+            }
           }
         }
       }
